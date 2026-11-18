@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   SafeAreaView, View, Text, TextInput, TouchableOpacity, ScrollView, Modal,
-  Share, Switch, StyleSheet, useColorScheme, StatusBar, Platform,
+  Share, Switch, StyleSheet, useColorScheme, StatusBar, Platform, useWindowDimensions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
@@ -44,6 +44,9 @@ function Main() {
   const [rep, setRep] = useState('day');
   const [edit, setEdit] = useState(null);
   const idle = useRef(null);
+  const wide = useWindowDimensions().width >= 900;
+  const grid = wide ? { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' } : null;
+  const half = wide ? { width: '49%' } : null;
 
   useEffect(() => {
     (async () => {
@@ -99,7 +102,7 @@ function Main() {
   };
 
   const Visit = ({ v, out, manage }) => (
-    <View style={s.card}>
+    <View style={[s.card, half]}>
       <View style={s.rowBetween}>
         <Text style={s.h3}>{v.name}</Text>
         <Tag s={s} on={!v.tout} text={v.tout ? 'Left' : 'Inside'} />
@@ -127,23 +130,23 @@ function Main() {
     body = <>
       <View style={s.stats}>{[[live.length, 'Total on record'], [inside.length, 'Inside now'], [today.length, 'Today']].map(([n, l]) => <View key={l} style={[s.card, s.stat]}><Text style={s.big}>{n}</Text><Text style={s.mut}>{l}</Text></View>)}</View>
       <Text style={s.h2}>Today's visitors</Text>
-      {today.length ? today.map((v) => <Visit key={v.id} v={v} />) : <Empty t="No visitors yet today." />}
+      <View style={grid}>{today.length ? today.map((v) => <Visit key={v.id} v={v} />) : <Empty t="No visitors yet today." />}</View>
     </>;
   }
   if (tab === 'Inside now') body = <>
     <Text style={s.h2}>Inside now ({inside.length})</Text>
-    {inside.length ? inside.map((v) => <Visit key={v.id} v={v} out />) : <Empty t="Nobody is inside right now." />}
+    <View style={grid}>{inside.length ? inside.map((v) => <Visit key={v.id} v={v} out />) : <Empty t="Nobody is inside right now." />}</View>
   </>;
   if (tab === 'Records') body = <>
     <TextInput style={s.input} placeholder="Search by name, badge, or date" placeholderTextColor={c.mut} value={q} onChangeText={setQ} />
-    {adm ? <View style={s.rowBetween}><Text style={s.mut}>Show archived</Text><Switch value={showArch} onValueChange={setShowArch} /></View> : null}
-    {filtered.length ? filtered.map((v) => <Visit key={v.id} v={v} manage={adm} />) : <Empty t="No records match." />}
+    {adm ? <View style={[s.rowBetween, { marginTop: 4, marginBottom: 14 }]}><Text style={s.mut}>Show archived</Text><Switch value={showArch} onValueChange={setShowArch} /></View> : null}
+    <View style={grid}>{filtered.length ? filtered.map((v) => <Visit key={v.id} v={v} manage={adm} />) : <Empty t="No records match." />}</View>
   </>;
   if (tab === 'Reports') body = <>
     <View style={s.actions}>{[['day', 'Daily'], ['week', 'Weekly'], ['month', 'Monthly']].map(([k, l]) => <Btn key={k} s={s} t={l} p={rep === k} onPress={() => setRep(k)} />)}</View>
-    <Text style={s.body}>{period.length} visitors · {period.filter((v) => !v.tout).length} still inside · average stay {avg} min</Text>
-    <Btn s={s} t="Share report as CSV" onPress={csv} />
-    {period.map((v) => <Visit key={v.id} v={v} />)}
+    <Text style={[s.body, { marginTop: 14, marginBottom: 12 }]}>{period.length} visitors · {period.filter((v) => !v.tout).length} still inside · average stay {avg} min</Text>
+    <View style={{ alignSelf: 'flex-start', marginBottom: 16 }}><Btn s={s} t="Share report as CSV" onPress={csv} /></View>
+    <View style={grid}>{period.map((v) => <Visit key={v.id} v={v} />)}</View>
   </>;
   if (tab === 'Staff') body = <Staff s={s} S={S} me={me} setNote={setNote}
     onToggle={(id) => { const u = S.users.find((x) => x.id === id); setS((p) => ({ ...p, users: p.users.map((x) => (x.id === id ? { ...x, active: !x.active } : x)) })); logEv(`${u.active ? 'Disabled' : 'Enabled'} ${u.username}`); }}
@@ -178,7 +181,7 @@ function Main() {
         {body}
       </ScrollView>
       <Modal visible={!!edit} animationType="slide" transparent onRequestClose={() => setEdit(null)}>
-        <View style={s.modalBg}><View style={[s.card, { margin: 16 }]}>
+        <View style={s.modalBg}><View style={[s.card, { margin: 16, maxWidth: 560, width: '100%', alignSelf: 'center' }]}>
           <Text style={s.h2}>Edit {edit && edit.badge}</Text>
           {edit && [['name', 'Name'], ['contact', 'Contact number'], ['purpose', 'Purpose'], ['host', 'Person or department']].map(([k, l]) => (
             <Field key={k} s={s} label={l} value={edit[k]} onChangeText={(t) => setEdit({ ...edit, [k]: t })} />
@@ -225,7 +228,7 @@ function Login({ s, S, note, onIn, setNote }) {
   };
   return (
     <SafeAreaView style={[s.root, { justifyContent: 'center', padding: 20 }]}>
-      <View style={s.card}>
+      <View style={[s.card, { maxWidth: 440, width: '100%', alignSelf: 'center' }]}>
         <Text style={s.h1}>Office Visitor Management</Text>
         <Text style={s.mut}>Sign in to register and monitor visitors.</Text>
         <Note s={s} note={note} />
@@ -243,7 +246,7 @@ function Register({ s, onSave, setNote }) {
   const [f, setF] = useState(empty);
   const set = (k) => (t) => setF({ ...f, [k]: t });
   return (
-    <View style={s.card}>
+    <View style={[s.card, { maxWidth: 640, width: '100%' }]}>
       <Text style={s.h2}>Register a visitor</Text>
       <Text style={s.mut}>Time-in is recorded automatically when you save.</Text>
       <Field s={s} label="Visitor name" value={f.name} onChangeText={set('name')} />
@@ -292,7 +295,7 @@ function Staff({ s, S, me, onToggle, onAdd, setNote }) {
 }
 
 const mk = (c) => StyleSheet.create({
-  root: { flex: 1, width: '100%', maxWidth: 560, backgroundColor: c.bg, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 },
+  root: { flex: 1, width: '100%', maxWidth: 1100, backgroundColor: c.bg, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, backgroundColor: c.card, borderBottomWidth: 1, borderBottomColor: c.line },
   tabs: { flexGrow: 0, backgroundColor: c.card, borderBottomWidth: 1, borderBottomColor: c.line },
   tab: { paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 3, borderBottomColor: 'transparent' },
