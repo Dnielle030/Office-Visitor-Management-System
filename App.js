@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
 
 const LOGO = require('./assets/cvsu-logo.png');
-const KEY = 'ovms.v1';
+const KEY = 'ovms.v2';
 const IDLE = 10 * 60 * 1000;
 const sha = (t) => Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, t);
 const fmt = (t) => (t ? new Date(t).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—');
@@ -21,8 +21,8 @@ async function seed() {
   const h = Date.now(), H = 3600000;
   return {
     users: [
-      { id: 1, name: 'Alma Reyes', username: 'admin', pw: await sha('admin123'), role: 'admin', active: true },
-      { id: 2, name: 'Ben Santos', username: 'frontdesk', pw: await sha('desk123'), role: 'staff', active: true },
+      { id: 1, name: 'Bergado', username: 'admin', pw: await sha('admin123'), role: 'admin', active: true },
+      { id: 2, name: 'Harvie Marcelo', username: 'frontdesk', pw: await sha('desk123'), role: 'staff', active: true },
     ],
     visits: [
       { id: 1, badge: 'V-001', name: 'Carlo Mendoza', contact: '0917 555 0142', purpose: 'Submit documents', host: 'Records Section', tin: h - 5 * H, tout: h - 4.5 * H, by: 'frontdesk' },
