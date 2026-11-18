@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   SafeAreaView, View, Text, TextInput, TouchableOpacity, ScrollView, Modal,
-  Share, Switch, StyleSheet, useColorScheme, StatusBar, Platform, useWindowDimensions,
+  Share, Switch, Image, StyleSheet, useColorScheme, StatusBar, Platform, useWindowDimensions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
 
+const LOGO = require('./assets/cvsu-logo.png');
 const KEY = 'ovms.v1';
 const IDLE = 10 * 60 * 1000;
 const sha = (t) => Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, t);
@@ -44,9 +45,12 @@ function Main() {
   const [rep, setRep] = useState('day');
   const [edit, setEdit] = useState(null);
   const idle = useRef(null);
-  const wide = useWindowDimensions().width >= 900;
-  const grid = wide ? { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' } : null;
-  const half = wide ? { width: '49%' } : null;
+  const winW = useWindowDimensions().width;
+  const wide = winW >= 900;
+  const px = wide ? 32 : 16;
+  const cols = winW >= 1400 ? 3 : 2;
+  const grid = wide ? { flexDirection: 'row', flexWrap: 'wrap', columnGap: 12 } : null;
+  const half = wide ? { width: Platform.OS === 'web' ? (cols === 3 ? 'calc(33.333% - 8px)' : 'calc(50% - 6px)') : '49%' } : null;
 
   useEffect(() => {
     (async () => {
@@ -165,18 +169,19 @@ function Main() {
   return (
     <SafeAreaView style={s.root} onStartShouldSetResponderCapture={() => { bump(); return false; }}>
       <StatusBar barStyle={c === dark ? 'light-content' : 'dark-content'} />
-      <View style={s.header}>
-        <View style={{ flex: 1 }}><Text style={s.h2}>Visitor Management</Text><Text style={s.mut}>{me.name} · {adm ? 'Administrator' : 'Office staff'}</Text></View>
+      <View style={[s.header, { paddingHorizontal: px }]}>
+        <Image source={LOGO} style={{ width: 96, height: 54 }} resizeMode="contain" accessibilityLabel="CvSU logo" />
+        <View style={{ flex: 1 }}><Text style={[s.h2, { marginBottom: 2 }]}>Visitor Management</Text><Text style={s.mut}>{me.name} · {adm ? 'Administrator' : 'Office staff'}</Text></View>
         <Btn s={s} t="Sign out" onPress={() => logout()} />
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.tabs} contentContainerStyle={{ paddingHorizontal: 12 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.tabs} contentContainerStyle={{ paddingHorizontal: px - 4 }}>
         {tabs.map((t) => (
           <TouchableOpacity key={t} onPress={() => { setTab(t); setQ(''); setNote(null); }} accessibilityRole="tab" accessibilityState={{ selected: tab === t }} style={[s.tab, tab === t && s.tabOn]}>
             <Text style={[s.tabTxt, tab === t && { color: c.ink, fontWeight: '700' }]}>{t}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ paddingHorizontal: px, paddingTop: 20, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
         <Note s={s} note={note} />
         {body}
       </ScrollView>
@@ -229,6 +234,7 @@ function Login({ s, S, note, onIn, setNote }) {
   return (
     <SafeAreaView style={[s.root, { justifyContent: 'center', padding: 20 }]}>
       <View style={[s.card, { maxWidth: 440, width: '100%', alignSelf: 'center' }]}>
+        <Image source={LOGO} style={{ width: 180, height: 100, alignSelf: 'center', marginBottom: 12 }} resizeMode="contain" accessibilityLabel="CvSU logo" />
         <Text style={s.h1}>Office Visitor Management</Text>
         <Text style={s.mut}>Sign in to register and monitor visitors.</Text>
         <Note s={s} note={note} />
@@ -295,15 +301,15 @@ function Staff({ s, S, me, onToggle, onAdd, setNote }) {
 }
 
 const mk = (c) => StyleSheet.create({
-  root: { flex: 1, width: '100%', maxWidth: 1100, backgroundColor: c.bg, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, backgroundColor: c.card, borderBottomWidth: 1, borderBottomColor: c.line },
-  tabs: { flexGrow: 0, backgroundColor: c.card, borderBottomWidth: 1, borderBottomColor: c.line },
+  root: { flex: 1, width: '100%', backgroundColor: c.bg, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 },
+  header: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, backgroundColor: c.card, borderBottomWidth: 1, borderBottomColor: c.line },
+  tabs: { flexGrow: 0, flexShrink: 0, backgroundColor: c.card, borderBottomWidth: 1, borderBottomColor: c.line },
   tab: { paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 3, borderBottomColor: 'transparent' },
   tabOn: { borderBottomColor: c.acc },
   tabTxt: { color: c.mut, fontSize: 15 },
   card: { backgroundColor: c.card, borderWidth: 1, borderColor: c.line, borderRadius: 10, padding: 16, marginBottom: 12 },
   h1: { color: c.ink, fontSize: 22, fontWeight: '800', marginBottom: 4 },
-  h2: { color: c.ink, fontSize: 18, fontWeight: '700', marginBottom: 6 },
+  h2: { color: c.ink, fontSize: 18, fontWeight: '700', marginBottom: 12 },
   h3: { color: c.ink, fontSize: 16, fontWeight: '700', flexShrink: 1 },
   body: { color: c.ink, fontSize: 15, marginVertical: 4 },
   mut: { color: c.mut, fontSize: 13, marginVertical: 2 },
@@ -319,7 +325,7 @@ const mk = (c) => StyleSheet.create({
   tag: { backgroundColor: c.soft, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 3 },
   tagOff: { backgroundColor: c.bg },
   tagTxt: { color: c.acc, fontSize: 12, fontWeight: '700' },
-  stats: { flexDirection: 'row', gap: 8 },
+  stats: { flexDirection: 'row', gap: 12, marginBottom: 8 },
   stat: { flex: 1, padding: 12 },
   big: { color: c.acc, fontSize: 30, fontWeight: '800' },
   note: { backgroundColor: c.soft, borderRadius: 8, padding: 10, marginBottom: 12 },
